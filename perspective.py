@@ -3,10 +3,10 @@ import numpy as np
 import imutils
     
 #Find the file vertex using contour approach
-def get_vertex(image):
-    #ratio = image.shape[0]/300.0
-    orig = image.copy()
-    #image = imutils.resize(image,height = 300)
+def get_vertex(origin):
+    t = origin.shape[0]/300.0
+    #orig = image.copy()
+    image = imutils.resize(origin,height = 300)
     #convert into grayscale and blur
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
     gray = cv2.bilateralFilter(gray,11,17,17)
@@ -27,13 +27,14 @@ def get_vertex(image):
             fileContour = approx
             break
     #show contour
-    cv2.drawContours(image,[fileContour],-1,(0,255,0),3)
+    cv2.drawContours(origin,[fileContour],-1,(0,255,0),3)
     cv2.imwrite("test.jpg",image)
     #cv2.imshow("Shoe contour",image)
     #cv2.waitKey(0)
-    return fileContour,orig
+    return fileContour*t,origin,t
 
-def formate_input(raw):
+def formate_input(raw,t):
+    vts = np.array([[[int(i) for i in j[0]]] for j in raw],dtype='float32')    
     vts=np.array([raw[i][0] for i in range(4)],dtype="float32")
     #expected:top-left,top-right,bottom-right,bottomleft
     rect = np.zeros((4,2),dtype = "float32")
@@ -49,8 +50,8 @@ def formate_input(raw):
     rect[3] = vts[np.argmax(diff)]
     return rect
 
-def transform(image,vts):
-    vts = formate_input(vts)
+def transform(image,vts,t):
+    vts = formate_input(vts,t)
     (tl,tr,br,bl) = vts
     #compute width of new image(max distance between bottom-right and bottom-left or tr and tl)
     width_bottom = np.sqrt(((br[0]-bl[0])**2)+((br[1]-bl[1])**2))
@@ -71,8 +72,8 @@ def transform(image,vts):
 if __name__ == "__main__":
     s=raw_input();
     img=cv2.imread(s)
-    vts,img2=get_vertex(img)
-    warpped=transform(img2,vts)
+    vts,img2,t=get_vertex(img)
+    warpped=transform(img2,vts,t)
     cv2.imwrite("new.jpg",warpped)
 #    cv2.imshow("warpped",warpped)
  #   cv2.waitKey(0)
